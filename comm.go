@@ -72,8 +72,8 @@ func listenRead(conn net.Conn, done chan bool) {
         if err == io.EOF {
             fmt.Println("Connection terminated by peer.")
             conn.Close()
-            os.Exit(0)
             done <- true
+            break
         }
 
         IV := message[:ivLen]
@@ -94,8 +94,8 @@ func listenWrite(conn net.Conn, done chan bool) {
         // treat "END" as a keyword used by the user to terminate the connection
         if message == "END\n" {
             conn.Close()
-            os.Exit(0)
             done <- true
+            break
         }
 
         if err != nil {
@@ -164,7 +164,8 @@ func decrypt(ciphertext []byte, IV []byte) []byte {
 func receiveIncoming(reader *bufio.Reader, message *[]byte) (int, error) {
     numRead, err := reader.Read(*message)
 
-    if err != nil {
+    // let the caller choose how to deal with an EOF
+    if err != nil && err != io.EOF {
         fmt.Println("Error reading incoming message: ", err.Error())
     }
 
